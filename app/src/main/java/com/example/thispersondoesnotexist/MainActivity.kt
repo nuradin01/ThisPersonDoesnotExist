@@ -5,17 +5,15 @@ import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
-import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import coil.load
@@ -25,8 +23,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
-import java.net.MalformedURLException
-import java.net.URL
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -35,20 +31,20 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.imageView.load("https://thispersondoesnotexist.com/image"){
+        binding.imageView.load("https://thispersondoesnotexist.com/") {
             diskCachePolicy(CachePolicy.DISABLED)
             memoryCachePolicy(CachePolicy.DISABLED)
         }
         binding.imageView2.setOnClickListener {
-            binding.imageView.load("https://thispersondoesnotexist.com/image"){
+            binding.imageView.load("https://thispersondoesnotexist.com/") {
                 diskCachePolicy(CachePolicy.DISABLED)
                 memoryCachePolicy(CachePolicy.DISABLED)
             }
 
         }
         binding.imageView3.setOnClickListener {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-                val bitmap:Bitmap = binding.imageView.drawable.toBitmap()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val bitmap: Bitmap = binding.imageView.drawable.toBitmap()
                 mSaveMediaToStorage(bitmap)
             } else {
                 when (PackageManager.PERMISSION_GRANTED) {
@@ -56,10 +52,11 @@ class MainActivity : AppCompatActivity() {
                         this,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE
                     ) -> {
-                        val bitmap:Bitmap = binding.imageView.drawable.toBitmap()
+                        val bitmap: Bitmap = binding.imageView.drawable.toBitmap()
                         mSaveMediaToStorage(bitmap)
 
                     }
+
                     else -> {
                         requestExternalStoragePerm.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     }
@@ -81,39 +78,39 @@ class MainActivity : AppCompatActivity() {
                     put(MediaStore.MediaColumns.MIME_TYPE, "image/jpg")
                     put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
                 }
-                val imageUri: Uri? = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                val imageUri: Uri? =
+                    resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
                 fos = imageUri?.let { resolver.openOutputStream(it) }
             }
         } else {
-            val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            val imagesDir =
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
             val image = File(imagesDir, filename)
             fos = FileOutputStream(image)
         }
         fos?.use {
             bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, it)
-            Toast.makeText(this , "Saved to Gallery" , Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Saved to Gallery", Toast.LENGTH_SHORT).show()
         }
     }
+
     private val requestExternalStoragePerm =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (!isGranted) {
-                MaterialAlertDialogBuilder(this)
-                    .setTitle("Allow to download image")
+                MaterialAlertDialogBuilder(this).setTitle("Allow to download image")
                     .setMessage("This app will not download images without this permission")
                     .setNegativeButton("cancel") { dialog, _ ->
                         dialog.dismiss()
-                    }
-                    .setPositiveButton("Ok") { _, _ ->
+                    }.setPositiveButton("Ok") { _, _ ->
                         openAppSetting.launch(
                             Intent(
                                 Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                                 Uri.fromParts("package", packageName, null)
                             )
                         )
-                    }
-                    .show()
+                    }.show()
             } else {
-                val bitmap:Bitmap = binding.imageView.drawable.toBitmap()
+                val bitmap: Bitmap = binding.imageView.drawable.toBitmap()
                 mSaveMediaToStorage(bitmap)
             }
 
